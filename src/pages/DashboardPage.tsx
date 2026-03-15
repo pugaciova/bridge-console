@@ -56,7 +56,7 @@ export default function DashboardPage() {
             <header className="mb-8">
               <h1 className="text-3xl font-bold tracking-tight">Help Center</h1>
               <p className="mt-2 text-muted-foreground">
-                Frequently asked questions about the Frontier ecosystem.
+                Frequently asked questions about the ecosystem.
               </p>
               <p className="mt-1 text-xs text-muted-foreground/60">
                 Data source: border_info_admin via frontier_consult gateway

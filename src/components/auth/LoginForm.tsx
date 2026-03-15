@@ -38,16 +38,16 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <form onSubmit={handleSubmit} className="mt-8 space-y-5">
       <div>
-        <label htmlFor="login-username" className="block text-sm font-medium text-foreground">
-          Username
+        <label htmlFor="login-email" className="block text-sm font-medium text-foreground">
+          Email
         </label>
         <input
-          id="login-username"
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          id="login-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="mt-1.5 block w-full rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all"
-          placeholder="Enter your username"
+          placeholder="Enter your email"
           disabled={loading}
         />
       </div>
