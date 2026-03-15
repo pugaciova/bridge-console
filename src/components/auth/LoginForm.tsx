@@ -6,7 +6,7 @@ import { authService } from '../../services/authService';
  * POST /api/auth/login
  */
 export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
