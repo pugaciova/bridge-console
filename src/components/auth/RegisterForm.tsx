@@ -6,7 +6,7 @@ import { authService } from '../../services/authService';
  * POST /api/auth/register
  */
 export default function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
