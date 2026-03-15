@@ -16,7 +16,7 @@ export default function RegisterForm({ onSuccess }: { onSuccess: () => void }) {
     e.preventDefault();
     setError('');
 
-    if (!username.trim() || !password.trim()) {
+    if (!email.trim() || !password.trim()) {
       setError('Please fill in all fields.');
       return;
     }
