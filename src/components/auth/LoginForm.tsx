@@ -26,7 +26,7 @@ export default function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 
     setLoading(true);
     try {
-      await authService.login({ username: username.trim(), password });
+      await authService.login({ email: email.trim(), password });
       onSuccess();
     } catch {
       setError('Invalid credentials. Please try again.');
