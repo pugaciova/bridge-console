@@ -5,13 +5,17 @@ export interface AuthCredentials {
   password: string;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: 'USER' | 'ADMIN';
+}
+
 export interface AuthResponse {
   token: string;
-  user: {
-    id: number;
-    email: string;
-  };
+  user: AuthUser;
 }
+
 
 export interface FAQItem {
   id: number;

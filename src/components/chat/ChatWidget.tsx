@@ -1,156 +1,126 @@
-/**
- * Backend service: ai_for_chatbot
- * API routed via frontier_consult
- * TODO: POST /api/ai/question
- * EVENT: USER_QUESTION_SUBMITTED
- */
+import { useEffect, useState } from 'react';
+import { aiService } from '@/services/aiService';
+import { toast } from '@/hooks/use-toast';
 
-import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Send, MessageCircle, X } from 'lucide-react';
-import { aiService } from '../../services/aiService';
-import type { ChatMessage } from '../../types';
+interface Message {
+  id: string;
+  question: string;
+  answer: string;
+}
 
 export default function ChatWidget() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isThinking, setIsThinking] = useState(false);
-  const [error, setError] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [question, setQuestion] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    const loadHistory = async () => {
+      try {
+        const history = await aiService.getHistory();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim() || isThinking) return;
+        setMessages(
+            history.map((item, index) => ({
+              id: item.id ?? String(index),
+              question: item.question,
+              answer: item.answer,
+            }))
+        );
+      } catch (error) {
+        const message =
+            error instanceof Error ? error.message : 'Failed to load history';
 
-    const userMessage: ChatMessage = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: query.trim(),
-      timestamp: new Date(),
+        toast({
+          title: 'Error',
+          description: message,
+          variant: 'destructive',
+        });
+      }
     };
 
-    setMessages((prev) => [...prev, userMessage]);
-    setQuery('');
-    setIsThinking(true);
-    setError('');
+    loadHistory();
+  }, []);
+
+  const handleSend = async () => {
+    if (!question.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a question.',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     try {
-      // EVENT: USER_QUESTION_SUBMITTED
-      // Backend publishes event to message broker (RabbitMQ/Kafka)
-      const response = await aiService.askQuestion(userMessage.content);
+      setLoading(true);
 
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response.answer,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
-    } catch {
-      setError('Failed to get a response. Please try again.');
+      const result = await aiService.askQuestion(question.trim());
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: result.id ?? String(Date.now()),
+          question: result.question,
+          answer: result.answer,
+        },
+      ]);
+
+      setQuestion('');
+    } catch (error) {
+      const message =
+          error instanceof Error ? error.message : 'Failed to send question';
+
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
     } finally {
-      setIsThinking(false);
+      setLoading(false);
     }
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-accent-foreground transition-all hover:opacity-90"
-      >
-        <MessageCircle className="h-4 w-4" />
-        Ask a question
-      </button>
-    );
-  }
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex h-[420px] flex-col"
-    >
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
-          <span className="text-xs font-medium text-muted-foreground">AI Online</span>
+      <div className="space-y-4">
+        <div className="max-h-[400px] space-y-3 overflow-y-auto rounded-lg border border-border bg-background p-4">
+          {messages.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No messages yet.</p>
+          ) : (
+              messages.map((message) => (
+                  <div key={message.id} className="space-y-2">
+                    <div className="rounded-lg bg-muted p-3 text-sm">
+                      <strong>You:</strong> {message.question}
+                    </div>
+                    <div className="rounded-lg border border-border bg-surface p-3 text-sm">
+                      <strong>AI:</strong> {message.answer}
+                    </div>
+                  </div>
+              ))
+          )}
         </div>
-        <button onClick={() => setIsOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-          <X className="h-4 w-4" />
-        </button>
-      </div>
 
-      {/* Messages */}
-      <div className="flex-1 space-y-3 overflow-y-auto pr-1">
-        {messages.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground py-8">
-            Ask anything about the system architecture.
-          </p>
-        )}
-        <AnimatePresence>
-          {messages.map((msg) => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[85%] rounded-lg px-3.5 py-2.5 text-sm ${
-                  msg.role === 'user'
-                    ? 'bg-accent text-accent-foreground'
-                    : 'bg-muted text-foreground'
-                }`}
-              >
-                {msg.content}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        {isThinking && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-start"
+        <div className="flex gap-2">
+          <input
+              className="flex-1 rounded-lg border border-border bg-background px-4 py-3"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask a question..."
+              disabled={loading}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSend();
+                }
+              }}
+          />
+
+          <button
+              type="button"
+              onClick={handleSend}
+              disabled={loading}
+              className="rounded-lg bg-slate-800 px-6 py-3 text-white disabled:opacity-50"
           >
-            <div className="flex items-center gap-1.5 rounded-lg bg-muted px-3.5 py-2.5">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
-            </div>
-          </motion.div>
-        )}
-        <div ref={messagesEndRef} />
+            {loading ? 'Sending...' : 'Send'}
+          </button>
+        </div>
       </div>
-
-      {/* Error */}
-      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
-
-      {/* Input */}
-      <form onSubmit={handleSubmit} className="relative mt-4">
-        <input
-          className="w-full rounded-lg border-none bg-muted py-3 pl-4 pr-12 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 transition-all"
-          placeholder="Ask a question..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          disabled={isThinking}
-        />
-        <button
-          type="submit"
-          disabled={isThinking || !query.trim()}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md bg-accent p-1.5 text-accent-foreground transition-colors hover:opacity-90 disabled:opacity-40"
-        >
-          <Send className="h-3.5 w-3.5" />
-        </button>
-      </form>
-    </motion.div>
   );
 }

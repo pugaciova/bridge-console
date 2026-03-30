@@ -1,50 +1,68 @@
-// AUTH handled by frontier_consult API Gateway
-// POST /api/auth/register
-// POST /api/auth/login
-
-import apiClient from '../api/apiClient';
 import type { AuthCredentials, AuthResponse } from '../types';
 
-export const authService = {
-  /**
-   * Register a new user
-   * TODO: Connect to POST /api/auth/register on frontier_consult
-   */
-  async register(credentials: AuthCredentials): Promise<AuthResponse> {
-    // TODO: Replace mock with actual API call
-    // const response = await apiClient.post<AuthResponse>('/auth/register', credentials);
-    // return response.data;
+const API_URL = 'http://localhost:8081';
 
-    // Mock implementation for UI development
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    const mockResponse: AuthResponse = {
-      token: 'mock-jwt-token-' + Date.now(),
-      user: { id: 1, email: credentials.email },
+export const authService = {
+  async register(credentials: AuthCredentials): Promise<AuthResponse> {
+    const response = await fetch(`${API_URL}/auth/register`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Registration failed');
+    }
+
+    const data = await response.json();
+
+    return {
+      token: '',
+      user: {
+        id: data.id ?? '',
+        email: data.email,
+        role: data.role ?? 'USER',
+      },
     };
-    localStorage.setItem('token', mockResponse.token);
-    return mockResponse;
   },
 
-  /**
-   * Login existing user
-   * TODO: Connect to POST /api/auth/login on frontier_consult
-   */
   async login(credentials: AuthCredentials): Promise<AuthResponse> {
-    // TODO: Replace mock with actual API call
-    // const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
-    // return response.data;
+    const response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(credentials),
+    });
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const mockResponse: AuthResponse = {
-      token: 'mock-jwt-token-' + Date.now(),
-      user: { id: 1, email: credentials.email },
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Invalid credentials');
+    }
+
+    const data = await response.json();
+
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('userEmail', data.email);
+    localStorage.setItem('userRole', data.role);
+
+    return {
+      token: data.token,
+      user: {
+        id: data.id,
+        email: data.email,
+        role: data.role,
+      },
     };
-    localStorage.setItem('token', mockResponse.token);
-    return mockResponse;
   },
 
   logout() {
     localStorage.removeItem('token');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userRole');
   },
 
   isAuthenticated(): boolean {

@@ -1,40 +1,49 @@
-// Backend service: ai_for_chatbot
-// API routed via frontier_consult
+export interface AIAnswerResponse {
+  id?: string;
+  userId?: string;
+  question: string;
+  answer: string;
+  timestamp?: number;
+}
 
-import apiClient from '../api/apiClient';
-import type { AIQuestionRequest, AIAnswerResponse } from '../types';
+const API_URL = 'http://localhost:8081';
+
+function getAuthHeaders() {
+  const token = localStorage.getItem('token');
+
+  return {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`,
+  };
+}
 
 export const aiService = {
-  /**
-   * Send a question to the AI assistant
-   * TODO: Connect to POST /api/ai/question on frontier_consult → routes to ai_for_chatbot
-   *
-   * // EVENT: USER_QUESTION_SUBMITTED
-   * // Backend publishes event to message broker (RabbitMQ/Kafka)
-   */
   async askQuestion(question: string): Promise<AIAnswerResponse> {
-    // TODO: Replace mock with actual API call
-    // const response = await apiClient.post<AIAnswerResponse>('/ai/question', { question });
-    // return response.data;
+    const response = await fetch(`${API_URL}/questions`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ question }),
+    });
 
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to get answer');
+    }
 
-    const mockResponses: Record<string, string> = {
-      deploy:
-        'Deployment is handled by the release-orchestrator-idp service. It coordinates the CI/CD pipeline across all microservices.',
-      auth: 'Authentication is managed by the frontier_consult API gateway using JWT tokens.',
-      faq: 'FAQ content is managed through the border_info_admin Django admin interface.',
-    };
+    return response.json();
+  },
 
-    const key = Object.keys(mockResponses).find((k) =>
-      question.toLowerCase().includes(k)
-    );
+  async getHistory(): Promise<AIAnswerResponse[]> {
+    const response = await fetch(`${API_URL}/questions/history`, {
+      method: 'GET',
+      headers: getAuthHeaders(),
+    });
 
-    return {
-      answer:
-        key
-          ? mockResponses[key]
-          : `Based on the system architecture, here's what I found: The Frontier ecosystem uses a distributed microservice architecture with frontier_consult as the API gateway. Your question "${question}" relates to the overall system design. Please refer to the documentation for detailed information.`,
-    };
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(error || 'Failed to load history');
+    }
+
+    return response.json();
   },
 };
