@@ -169,54 +169,70 @@ export default function AdminPage() {
               <div>
                 <h2 className="text-2xl font-bold tracking-tight">User Management</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Create, manage roles, and remove users.
+                  Create, manage roles, remove users, and access API documentation.
                 </p>
               </div>
 
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-1.5 h-4 w-4" />
-                    Create New User
-                  </Button>
-                </DialogTrigger>
+              <div className="flex items-center gap-3">
+                <Button
+                    variant="outline"
+                    onClick={() => window.open('http://localhost:8081/swagger-ui/index.html', '_blank')}
+                >
+                  Swagger UI
+                </Button>
 
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Create New User</DialogTitle>
-                  </DialogHeader>
+                <Button
+                    variant="outline"
+                    onClick={() => window.open('http://localhost:8081/v3/api-docs', '_blank')}
+                >
+                  API Docs
+                </Button>
 
-                  <div className="space-y-4 pt-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="new-email">Email</Label>
-                      <Input
-                          id="new-email"
-                          type="email"
-                          placeholder="user@example.com"
-                          value={newEmail}
-                          onChange={(e) => setNewEmail(e.target.value)}
-                          disabled={submitting}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="new-password">Password</Label>
-                      <Input
-                          id="new-password"
-                          type="password"
-                          placeholder="••••••••"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          disabled={submitting}
-                      />
-                    </div>
-
-                    <Button className="w-full" onClick={handleCreateUser} disabled={submitting}>
-                      {submitting ? 'Creating...' : 'Create User'}
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button>
+                      <Plus className="mr-1.5 h-4 w-4" />
+                      Create New User
                     </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Create New User</DialogTitle>
+                    </DialogHeader>
+
+                    <div className="space-y-4 pt-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="new-email">Email</Label>
+                        <Input
+                            id="new-email"
+                            type="email"
+                            placeholder="user@example.com"
+                            value={newEmail}
+                            onChange={(e) => setNewEmail(e.target.value)}
+                            disabled={submitting}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="new-password">Password</Label>
+                        <Input
+                            id="new-password"
+                            type="password"
+                            placeholder="••••••••"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            disabled={submitting}
+                        />
+                      </div>
+
+                      <Button className="w-full" onClick={handleCreateUser} disabled={submitting}>
+                        {submitting ? 'Creating...' : 'Create User'}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
 
             <div className="rounded-xl border border-border bg-surface shadow-sm">
