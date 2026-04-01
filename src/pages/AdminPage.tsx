@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, Shield, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Shield, ShieldCheck, FileJson, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,6 +28,8 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { userService, type UserDto } from '@/services/userService';
 
+const API_BASE_URL = 'http://localhost:8081';
+
 export default function AdminPage() {
   const navigate = useNavigate();
 
@@ -37,7 +39,7 @@ export default function AdminPage() {
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  //123
+  const [docsLoading, setDocsLoading] = useState(false);
 
   const loadUsers = async () => {
     try {
@@ -147,6 +149,56 @@ export default function AdminPage() {
     }
   };
 
+  const openSwaggerUi = () => {
+    window.open(`${API_BASE_URL}/swagger-ui/index.html`, '_blank');
+  };
+
+  const openApiDocs = async () => {
+    try {
+      setDocsLoading(true);
+
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        throw new Error('Token not found. Please log in again.');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/v3/api-docs`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to load API docs');
+      }
+
+      const data = await response.json();
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: 'application/json',
+      });
+
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (error) {
+      const message =
+          error instanceof Error ? error.message : 'Failed to open API docs';
+
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDocsLoading(false);
+    }
+  };
+
   return (
       <div className="min-h-screen bg-background text-foreground">
         <nav className="sticky top-0 z-10 border-b border-border bg-surface/80 backdrop-blur-md">
@@ -175,18 +227,14 @@ export default function AdminPage() {
               </div>
 
               <div className="flex items-center gap-3">
-                <Button
-                    variant="outline"
-                    onClick={() => window.open('http://localhost:8081/swagger-ui/index.html', '_blank')}
-                >
+                <Button variant="outline" onClick={openSwaggerUi}>
+                  <BookOpen className="mr-1.5 h-4 w-4" />
                   Swagger UI
                 </Button>
 
-                <Button
-                    variant="outline"
-                    onClick={() => window.open('http://localhost:8081/v3/api-docs', '_blank')}
-                >
-                  API Docs
+                <Button variant="outline" onClick={openApiDocs} disabled={docsLoading}>
+                  <FileJson className="mr-1.5 h-4 w-4" />
+                  {docsLoading ? 'Opening...' : 'API Docs'}
                 </Button>
 
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
